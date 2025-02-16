@@ -1,115 +1,104 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Itinerary } from "@/types/iternary";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 interface ItineraryDisplayProps {
-  itinerary: any;
-  onSwap: (dayIndex: number, activityIndex: number) => void;
+  itinerary: Itinerary | undefined;
 }
 
-export default function ItineraryDisplay({ itinerary, onSwap }: ItineraryDisplayProps) {
+export default function ItineraryDisplay({ itinerary }: ItineraryDisplayProps) {
+  // State to store fetched images
+  const [imageURLs, setImageURLs] = useState<{ [key: string]: string }>({});
+
+  // Function to fetch a random image from Lorem Picsum
+  const fetchRandomImage = async (id: string) => {
+    return `https://picsum.photos/500/300?random=${id}`;
+  };
+
+  // useEffect to fetch images once per activity
+  useEffect(() => {
+    if (!itinerary || !itinerary.data || !itinerary.data.itinerary) return;
+
+    const fetchImages = async () => {
+      const newImageURLs: { [key: string]: string } = {};
+      for (const day of itinerary.data.itinerary.dayInfo) {
+        for (const activity of day.activities) {
+          if (!activity.image_URL && !imageURLs[activity.id]) {
+            newImageURLs[activity.id] = await fetchRandomImage(activity.id);
+          }
+        }
+      }
+      setImageURLs((prev) => ({ ...prev, ...newImageURLs }));
+    };
+
+    fetchImages();
+  }, [itinerary]);
+
+  // If no itinerary, show message
   if (!itinerary || !itinerary.data || !itinerary.data.itinerary) {
-    return <p className="text-gray-500 text-center">No itinerary generated yet.</p>;
+    return (
+      <p className="text-gray-500 text-center mt-6">
+        No itinerary generated yet.
+      </p>
+    );
   }
 
   const { title, dayInfo } = itinerary.data.itinerary;
 
   return (
-    <div className="p-6 max-w-2xl mx-auto bg-gray-50 rounded-md shadow-md">
-      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+    <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">
+        {title}
+      </h2>
 
-      {dayInfo.map((day: any, dayIndex: number) => (
-        <div key={day.id} className="mb-6 p-4 bg-white rounded-md shadow">
-          <h3 className="text-xl font-semibold">Day {day.day}</h3>
+      {dayInfo.map((day) => (
+        <div key={day.id} className="mb-8 p-5 bg-gray-50 rounded-lg shadow">
+          <h3 className="text-2xl font-semibold text-gray-800">
+            Day {day.day}
+          </h3>
 
-          {day.activities.map((activity: any, activityIndex: number) => (
-            <ActivityCard 
-              key={activity.id} 
-              activity={activity} 
-              onSwap={() => onSwap(dayIndex, activityIndex)}
-            />
-          ))}
+          <div className="mt-4 space-y-4">
+            {day.activities.map((activity) => (
+              <div
+                key={activity.id}
+                className="p-4 bg-white rounded-lg shadow flex flex-col sm:flex-row gap-4"
+              >
+                {/* Activity Image */}
+                <div className="w-full sm:w-1/3">
+                  <Image
+                    src={
+                      activity.image_URL ||
+                      imageURLs[activity.id] ||
+                      "/placeholder.jpg"
+                    }
+                    alt={activity.name}
+                    width={500}
+                    height={300}
+                    className="rounded-lg object-cover"
+                    unoptimized
+                  />
+                </div>
+
+                {/* Activity Details */}
+                <div className="flex-1">
+                  <h4 className="text-xl font-bold text-gray-900">
+                    {activity.name}
+                  </h4>
+                  <p className="text-gray-600 text-sm mt-1">
+                    {activity.description}
+                  </p>
+                  <p className="text-gray-500 text-xs mt-2">
+                    📍 {activity.coordinates.latitude},{" "}
+                    {activity.coordinates.longitude}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>
-  );
-}
-
-// ✅ ActivityCard component (handles image fetching)
-function ActivityCard({ activity, onSwap }: { activity: any; onSwap: () => void }) {
-  const [imageURL, setImageURL] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchImage() {
-      const wikimediaImage = await fetchWikimediaImage(activity.name);
-      if (wikimediaImage) {
-        setImageURL(wikimediaImage);
-      } else {
-        setImageURL(getFallbackImage(activity.name, activity.coordinates));
-      }
-    }
-
-    fetchImage();
-  }, [activity.name]);
-
-  return (
-    <div className="mt-3 p-3 bg-gray-100 rounded-md shadow-sm">
-      <h4 className="text-lg font-bold">{activity.name}</h4>
-      <p className="text-sm text-gray-600">{activity.description}</p>
-
-      {imageURL && (
-        <Image
-          src={imageURL}
-          alt={activity.name}
-          width={500}
-          height={300}
-          className="rounded-md mt-2"
-        />
-      )}
-
-      <p className="text-xs text-gray-500">
-        📍 {activity.coordinates.latitude}, {activity.coordinates.longitude}
-      </p>
-
-      <button
-        className="mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-        onClick={onSwap}
-      >
-        Swap Activity
-      </button>
-    </div>
-  );
-}
-
-// ✅ Fetch image from Wikimedia API
-async function fetchWikimediaImage(query: string) {
-  try {
-    const response = await fetch(
-      `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=original&titles=${encodeURIComponent(query)}`
-    );
-    const data = await response.json();
-
-    const pages = data.query.pages;
-    const firstPage = Object.values(pages)[0] as any;
-
-    return firstPage?.original?.source || null;
-  } catch (error) {
-    console.error("Error fetching Wikimedia image:", error);
-    return null;
-  }
-}
-
-// ✅ Get fallback image (Pexels or OpenStreetMap)
-function getFallbackImage(name: string, coordinates: { latitude: number; longitude: number }) {
-  const fallbackImages: Record<string, string> = {
-    Paris: "https://images.pexels.com/photos/338515/pexels-photo-338515.jpeg",
-    NewYork: "https://images.pexels.com/photos/378570/pexels-photo-378570.jpeg",
-    Rome: "https://images.pexels.com/photos/179716/pexels-photo-179716.jpeg",
-  };
-
-  return (
-    fallbackImages[name] ||
-    `https://static-maps.yandex.ru/1.x/?ll=${coordinates.longitude},${coordinates.latitude}&z=14&size=450,300&l=map`
   );
 }
