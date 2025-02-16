@@ -30,7 +30,7 @@ interface Coordinates {
     id: string;
     title: string;
     description: string;
-    inviteLink: string;
+    inviteLink?: string;
     cities: City[];
     dayInfo: DayInfo[];
   }

@@ -3,19 +3,24 @@
 import { useState } from "react";
 import ItineraryForm from "@/components/ItineraryForm";
 import ItineraryDisplay from "@/components/ItineraryDisplay";
-import { fetchItinerary } from "@/servises/geminiService";
 import Itinerary from "@/types/iternary";
+import { fetchItinerary } from "@/servises/geminiService";
 
 export default function Home() {
-  const [itinerary, setItinerary] = useState<Itinerary>();
+  const [itinerary, setItinerary] = useState<Itinerary | undefined>();
   const [loading, setLoading] = useState(false);
 
   // Function to generate itinerary
   const handleGenerate = async (city: string, days: number) => {
     setLoading(true);
-    const result = await fetchItinerary(city, days);
-    setItinerary(result);
-    console.log("Itinerary result:", result);
+    setItinerary(undefined); // Clear previous itinerary while loading
+    try {
+      const result = await fetchItinerary(city, days);
+      setItinerary(result);
+      console.log("Itinerary result:", result);
+    } catch (error) {
+      console.error("Error fetching itinerary:", error);
+    }
     setLoading(false);
   };
 
@@ -25,11 +30,7 @@ export default function Home() {
 
       <ItineraryForm onSubmit={handleGenerate} />
 
-      {loading ? (
-        <p className="text-center mt-4">Generating itinerary...</p>
-      ) : (
-        <ItineraryDisplay itinerary={itinerary}  />
-      )}
+      <ItineraryDisplay itinerary={itinerary} loading={loading} />
     </div>
   );
 }
