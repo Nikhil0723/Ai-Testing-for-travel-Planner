@@ -1,26 +1,37 @@
-export interface Activity {
+interface Coordinates {
+    latitude: string;
+    longitude: string;
+  }
+  
+  interface Activity {
     id: string;
     name: string;
     description: string;
-    image_URL?: string;
-    coordinates: {
-      latitude: number;
-      longitude: number;
-    };
+    image_URL: string;
+    coordinates: Coordinates;
   }
   
-  export interface DayInfo {
+  interface DayInfo {
     id: string;
     day: number;
     activities: Activity[];
   }
   
-  export interface Itinerary {
-    data: {
-      itinerary: {
-        title: string;
-        dayInfo: DayInfo[];
-      };
-    };
+  interface City {
+    id: string;
+    name: string;
+    slug: string;
+    stateCode: string;
+    countryCode: string;
+    coordinates: Coordinates;
+  }
+  
+ export default interface Itinerary {
+    id: string;
+    title: string;
+    description: string;
+    inviteLink: string;
+    cities: City[];
+    dayInfo: DayInfo[];
   }
   

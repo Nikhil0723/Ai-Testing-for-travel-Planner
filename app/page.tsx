@@ -4,7 +4,7 @@ import { useState } from "react";
 import ItineraryForm from "@/components/ItineraryForm";
 import ItineraryDisplay from "@/components/ItineraryDisplay";
 import { fetchItinerary } from "@/servises/geminiService";
-import { Itinerary } from "@/types/iternary";
+import Itinerary from "@/types/iternary";
 
 export default function Home() {
   const [itinerary, setItinerary] = useState<Itinerary>();
