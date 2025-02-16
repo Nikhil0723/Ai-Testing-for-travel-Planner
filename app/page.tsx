@@ -10,10 +10,9 @@ export default function Home() {
   const [itinerary, setItinerary] = useState<Itinerary | undefined>();
   const [loading, setLoading] = useState(false);
 
-  // Function to generate itinerary
   const handleGenerate = async (city: string, days: number) => {
     setLoading(true);
-    setItinerary(undefined); // Clear previous itinerary while loading
+    setItinerary(undefined); 
     try {
       const result = await fetchItinerary(city, days);
       setItinerary(result);
